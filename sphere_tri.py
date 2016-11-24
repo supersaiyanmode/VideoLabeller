@@ -58,7 +58,7 @@ def sphere_tri(radius=1, maxlevel=0, cache={}):
         faces, vertices = mesh_refine(faces, vertices)
         vertices = sphere_project(vertices, radius)
 
-    centers = {}
+    centers = [None]*len(faces)
     for i in range(len(faces)):
         center = centroid([vertices[x] for x in faces[i]])
         centers[i] = normalize(center)
