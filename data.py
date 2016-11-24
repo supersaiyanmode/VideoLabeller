@@ -27,14 +27,21 @@ class VideoSample(object):
     def __init__(self, capture, sample, start, end):
         self.frames = []
         self.info = sample
-        self.total_frames = capture.get(cv2.CAP_PROP_FRAME_COUNT)
+        self.total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) + 0.5)
         self.start = start
         self.end = end
 
         capture.set(cv2.CAP_PROP_POS_FRAMES, start - 1)
         for _ in xrange(start, end+1):
-            self.frames.append(capture.read()[1])
+            self.frames.append(self.preprocess(capture.read()[1]))
+        self.height, self.width = self.frames[0].shape
     
+    def shape(self):
+        return self.height, self.width, self.total_frames
+
+    def preprocess(self, frame):
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
     def play(self, window_name, wait=3):
         for frame in self.frames:
             cv2.imshow(window_name, frame)
