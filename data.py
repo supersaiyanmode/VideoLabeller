@@ -47,6 +47,9 @@ class VideoSample(object):
             cv2.imshow(window_name, frame)
             cv2.waitKey(wait)
 
+    def __getitem__(self, key):
+        return self.frames[key]
+
     def __str__(self):
         return "<VideoSample (%s, %s), frames: %d -> %d"%(self.info.type,
                 self.info.path, self.start, self.end)
