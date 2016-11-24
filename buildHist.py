@@ -11,7 +11,7 @@ def build_histogram(video, coord, rad, sphere):
     for r in range(xi - rad, xi + rad + 1):
         for c in range(yi - rad, yi + rad + 1):
             for s in range(zi - rad, zi + rad + 1):
-                if 0 < r < rows - 1 and 0 < c < col - 1 \
+                if 0 < r < rows - 1 and 0 < c < cols - 1 \
                             and 0 < s < slices - 1:
                     mag, vect = get_gradient(video, r, c, s)
                     corr = [dot(x, vect) for x in centers]
@@ -28,36 +28,36 @@ def get_gradient(video, r, c, s):
     if s < 0: s = 0
 
     if r >= rows: r = rows - 1
-    if c >= cols; c = cols - 1
-    if s >= slices; s = slices - 1
+    if c >= cols: c = cols - 1
+    if s >= slices: s = slices - 1
 
     if c == 0:
-        grad_x = 2.0 * (video[s][r,c+1] - video[s][r,c])
+        grad_x = 2.0 * (int(video[s][r,c+1]) - int(video[s][r,c]))
     elif c == cols - 1:
-        grad_x = 2.0 * (video[s][r,c] - video[s][r,c-1])
+        grad_x = 2.0 * (int(video[s][r,c]) - int(video[s][r,c-1]))
     else:
-        grad_x = video[s][r, c+1] - video[s][r, c-1]
+        grad_x = int(video[s][r, c+1]) - int(video[s][r, c-1])
 
 
     if r == 0:
-        grad_y = 2.0 * (video[s][r,c] - video[s][r+1,c])
+        grad_y = 2.0 * (int(video[s][r,c]) - int(video[s][r+1,c]))
     elif r == rows - 1:
-        grad_y = 2.0 * (video[s][r-1,c] - video[s][r,c])
+        grad_y = 2.0 * (int(video[s][r-1,c]) - int(video[s][r,c]))
     else:
-        grad_y = video[s][r-1,c] - video[s][r+1,c]
+        grad_y = int(video[s][r-1,c]) - int(video[s][r+1,c])
 
     if s == 0:
-        grad_z = 2.0 * (video[s+1][r,c] - video[s][r,c])
+        grad_z = 2.0 * (int(video[s+1][r,c]) - int(video[s][r,c]))
     elif s == slices - 1:
-        grad_z = 2.0 * (video[s][r,c] - video[s-1][r,c])
+        grad_z = 2.0 * (int(video[s][r,c]) - int(video[s-1][r,c]))
     else:
-        grad_z = video[s+1][r,c] - video[s-1][r,c]
+        grad_z = int(video[s+1][r,c]) - int(video[s-1][r,c])
 
     grad = float(grad_x), float(grad_y), float(grad_z)
 
     mag = math.sqrt(dot(grad, grad))
 
     if mag < 10**-6:
-        return (1, 0, 0)
+        return mag, (1, 0, 0)
 
-    return vec_divide(grad, mag)
+    return mag, vec_divide(grad, mag)
