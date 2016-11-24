@@ -115,12 +115,12 @@ def find_vertex(vertices, vertex):
         max_index = max(max_index, vertex_index)
         if float_equal(coord[0], vertex[0]) and \
                 float_equal(coord[1], vertex[1]) and \
-                float_equal(coord[1], vertex[1]):
+                float_equal(coord[2], vertex[2]):
             return vertex_index
     vertices[max_index + 1] = vertex
     return max_index + 1
 
-def sphere_project(vertices, radius=1, centroid=(0,0,0)):
+def sphere_project(vertices, radius=1.0, centroid=(0,0,0)):
     xo, yo, zo = centroid
     res = {}
     for face, (X, Y, Z) in vertices.items():
@@ -130,7 +130,7 @@ def sphere_project(vertices, radius=1, centroid=(0,0,0)):
         res[face] = [radius * math.sin(phi) * math.cos(theta),
             radius * math.sin(phi) * math.sin(theta),
             radius * math.cos(phi)]
-        
+
     return res
 
 if __name__ == '__main__':

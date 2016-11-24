@@ -8,13 +8,16 @@ from sphere_tri import sphere_tri
 
 win = pyglet.window.Window()
 
-faces, vertices, centers = sphere_tri(radius=3, maxlevel=1)
+faces, vertices, centers = sphere_tri(radius=3, maxlevel=4)
 r = lambda: random.random()
 colors = [[r(),r(),r()] for _ in faces]
 theta = 0
+vert = 6.0
+speed = 0.05
 
 @win.event
 def on_draw():
+        global theta, vert, speed
         # Clear buffers
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
@@ -25,7 +28,7 @@ def on_draw():
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        gluLookAt(4*math.cos(theta), 6, 4*math.sin(theta), 0, 0, 0, 0, 1, 0);
+        gluLookAt(4*math.cos(theta), vert, 4*math.sin(theta), 0, 0, 0, 0, 1, 0);
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         glBegin(GL_LINES);
@@ -48,9 +51,13 @@ def on_draw():
                 glVertex3d(coords[1][0], coords[1][1], coords[1][2])
                 glVertex3d(coords[2][0], coords[2][1], coords[2][2])
                 glEnd()
-        global theta 
         theta += 0.1
+        vert -= speed
         print "drawn..", theta
+
+        if vert < -6.0 or vert > 6.0:
+                speed *= -1
+                
 
 pyglet.clock.schedule_interval(lambda x: win.dispatch_event('on_draw'), 1/30.0)
 pyglet.app.run()
