@@ -1,7 +1,9 @@
 
 class BaseConfig(object):
     tessellation_levels = 1
-
+    tessellation_radius = 1
+    
+    two_peak = True
     def __init__(self):
         self.n_faces = 20 * (4 ** self.tessellation_levels)
 
