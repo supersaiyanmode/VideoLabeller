@@ -25,8 +25,9 @@ def vec_divide(vec, val):
 def normalize(vec):
     return vec_divide(vec, math.sqrt(sum([x*x for x in vec])))
 
-def sphere_tri(radius=1, maxlevel=0):
-    #TODO: MEMOIZE!!!
+def sphere_tri(radius=1, maxlevel=0, cache={}):
+    if (radius, maxlevel) in cache:
+        return cache[(radius, maxlevel)]
 
     t = (1.0 + math.sqrt(5.0)) / 2.0
     tau = t / math.sqrt(1 + t**2)
@@ -79,6 +80,7 @@ def sphere_tri(radius=1, maxlevel=0):
         center = centroid([vertices[x] for x in faces[i]])
         centers[i] = normalize(center)
     
+    cache[(radius, maxlevel)] = faces, vertices, centers
     return faces, vertices, centers
 
 def mesh_refine(faces, vertices):
