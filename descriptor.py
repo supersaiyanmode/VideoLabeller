@@ -3,7 +3,7 @@ import math
 import config
 from buildHist import build_histogram, get_gradient
 from sphere_tri import sphere_tri
-from utils import dot
+from utils import dot, normalize
 
 sphere = sphere_tri(radius=config.tessellation_radius,
                                     maxlevel=config.tessellation_levels)
@@ -76,15 +76,16 @@ def key_sample_vec(video, coord, image_scale, time_scale):
 
 def add_sample(index, video, coord, dist_sq, rct, ijs_i):
     i, j, s = ijs_i
-    r, c, s = rct
+    r, c, t = rct
 
-    if r < 0 or r >= video.height or c < 0 or c >= video.width or s < 0 or s >= video.total_frames:
+    if r < 0 or r >= video.height or c < 0 or c >= video.width or t < 0 \
+                or t >= video.total_frames:
         return
 
     sigma = config.index_sigma * 0.5 * config.index_size
     weight = math.exp(-dist_sq / (2.0 * sigma * sigma))
 
-    grad, vect = get_gradient(video, r, c, s)
+    grad, vect = get_gradient(video, r, c, t)
     mag = grad * weight
 
     #Place in index
