@@ -55,10 +55,10 @@ class VideoSample(object):
                 self.info.path, self.start, self.end)
 
 class DataSet(object):
-    def __init__(self, datadir):
+    def __init__(self, datadir, train_file="train.txt", test_file="test.txt"):
         self.datadir = datadir
-        self.train = [SampleInfo(datadir, x) for x in open(datadir + "/train.txt")]
-        self.test = [SampleInfo(datadir, x) for x in open(datadir + "/test.txt")]
+        self.train = [SampleInfo(datadir, x) for x in open(datadir + "/" + train_file)]
+        self.test = [SampleInfo(datadir, x) for x in open(datadir + "/" + test_file)]
     
     def get_training(self):
         for sample in self.train[338:]:
