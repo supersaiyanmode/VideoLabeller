@@ -1,4 +1,7 @@
 import math
+import collections
+
+import numpy as np
 
 import config
 from buildHist import build_histogram, get_gradient
@@ -9,6 +12,15 @@ sphere = sphere_tri(radius=config.tessellation_radius,
                                     maxlevel=config.tessellation_levels)
 
 vertices, faces, centers = sphere
+
+def flatten(l):
+    for el in l:
+        if isinstance(el, collections.Iterable) and \
+			not isinstance(el, basestring):
+            for sub in flatten(el):
+                yield sub
+        else:
+            yield el
 
 def get_descriptor(video, coord, image_scale=1, time_scale=1):
     rad = image_scale * 3
@@ -29,6 +41,12 @@ def make_keypoint(video, coord, image_scale, time_scale):
     changed = False
 
     vec = key_sample_vec(video, coord, image_scale, time_scale)
+    return list(flatten(vec))
+    r = np.array(vec)
+    print r
+    return np.dot(r, r.T)
+
+    
     vec = normalize(vec)
     vec = [min(max_index_val, x) for x in vec]
     vec = normalize(vec)
@@ -39,7 +57,6 @@ def make_keypoint(video, coord, image_scale, time_scale):
     return [min(255, x) for x in res]
 
 def key_sample_vec(video, coord, image_scale, time_scale):
-    #index = KeySample(key, pix)
     index_size = config.index_size
 
     irow, icol, islice = map(int, coord)
@@ -101,4 +118,4 @@ if __name__ == '__main__':
     import data
     d = data.DataSet("dataset")
     v = next(d.get_training())
-    get_descriptor(v, (60, 40, 5))
+    print get_descriptor(v, (60, 40, 5))
