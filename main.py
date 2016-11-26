@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from sklearn import svm
 from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.multiclass import OneVsRestClassifier
 
 from descriptor import get_descriptor
 from data import DataSet
@@ -43,29 +44,29 @@ def get_samples(videos):
 
 class VideoClassifier(object):
     def __init__(self, classifier):
-        self.classifier = classifier
+        self.classifier = OneVsRestClassifier(classifier)
         self.multilabel = MultiLabelBinarizer()
 
     def train(self, dataset):
-        X, Y = [], []
+        features, target = [], []
 
         for info, descriptors in get_samples(dataset.get_training()):
             for desc in descriptors:
-                X.append(desc)
-                Y.append(info.type)
+                features.append(desc)
+                target.append(info.type)
         
-        Y = self.multilabel.fit_trasform([x] for x in Y)
-
+        X = features
+        Y = self.multilabel.fit_transform([[x] for x in target])
         self.classifier.fit(X, Y)
 
     def test(self, dataset):
         res = []
         for info, descriptors in get_samples(dataset.get_test()):
             X = descriptors
-            Y = [suppress(x) for x in self.classifier.predict(X)]
+            Y = self.classifier.predict(X)
             Y = [x[0] for x in self.multilabel.inverse_transform(Y)]
             c = Counter(Y)
-            res.append((info.type, c.most_common()))
+            res.append((info.type, c.most_common()[0][0]))
         return res
 
 def main():
