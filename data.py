@@ -61,13 +61,13 @@ class DataSet(object):
         self.test = [SampleInfo(datadir, x) for x in open(datadir + "/" + test_file)]
     
     def get_training(self):
-        for sample in self.train[338:]:
+        for sample in self.train:
             for video_sample in self.get_frames(sample):
                 yield video_sample
     
     def get_test(self):
         for sample in self.test:
-            for video_sample in self.get_frames(x):
+            for video_sample in self.get_frames(sample):
                 yield video_sample
 
     def get_frames(self, sample):
