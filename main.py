@@ -5,6 +5,7 @@ from collections import defaultdict
 from sklearn import svm
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.metrics import confusion_matrix
 
 from descriptor import get_descriptor
 from data import DataSet
@@ -28,7 +29,7 @@ def get_samples(videos):
         print "Training", video, "Shape:", video.shape()
         for coord in generate_coord(video.shape()):
             coord = list(coord)
-            coord[2] += video.start
+            #coord[2] += video.start
             print "  Descriptor at:", coord,
             desc = get_descriptor(video, coord)
             if not desc:
@@ -60,24 +61,23 @@ class VideoClassifier(object):
         self.classifier.fit(X, Y)
 
     def test(self, dataset):
-        res = []
+        actual, pred = [], []
         for info, descriptors in get_samples(dataset.get_test()):
             X = descriptors
             Y = self.classifier.predict(X)
             Y = [x[0] for x in self.multilabel.inverse_transform(Y)]
             c = Counter(Y)
-            res.append((info.type, c.most_common()[0][0]))
-        return res
+            actual.append(info.type)
+            pred.append(c.most_common()[0][0])
+        return actual, pred
 
 def main():
     d = DataSet("dataset")
     classifier = VideoClassifier(svm.SVC(verbose=True))
     classifier.train(d)
+    actual, pred = classifier.test(d)
 
-    confusion_matrix = defaultdict(lambda: defaultdict(int))
-    for actual, predicted in classifier.test(d):
-        confusion_matrix[actual][predicted] += 1
-    print confusion_matrix
+    print confusion_matrix(actual, pred)
 
 if __name__ == '__main__':
     main()
