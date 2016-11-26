@@ -9,6 +9,7 @@ from sklearn.metrics import confusion_matrix
 
 from descriptor import get_descriptor
 from data import DataSet
+from descriptor_cache import Cache
 import config
 
 
@@ -23,10 +24,16 @@ def generate_coord(shape):
         seen.add(coord)
         yield coord
 
-def get_samples(videos):
+def get_samples(videos, cache):
     for video in videos:
         descriptors = []
         print "Training", video, "Shape:", video.shape()
+
+        if str(video) in cache:
+            print "(Cached)"
+            yield video.info, cache[str(video)]
+            continue
+
         for coord in generate_coord(video.shape()):
             coord = list(coord)
             #coord[2] += video.start
@@ -41,17 +48,20 @@ def get_samples(videos):
             if len(descriptors) >= config.training_points:
                 break
 
+        cache[str(video)] = descriptors
         yield video.info, descriptors
 
 class VideoClassifier(object):
     def __init__(self, classifier):
+        self.cache = Cache()
         self.classifier = OneVsRestClassifier(classifier)
         self.multilabel = MultiLabelBinarizer()
 
     def train(self, dataset):
         features, target = [], []
 
-        for info, descriptors in get_samples(dataset.get_training()):
+        samples = get_samples(dataset.get_training(), self.cache)
+        for info, descriptors in samples:
             for desc in descriptors:
                 features.append(desc)
                 target.append(info.type)
@@ -62,7 +72,9 @@ class VideoClassifier(object):
 
     def test(self, dataset):
         actual, pred = [], []
-        for info, descriptors in get_samples(dataset.get_test()):
+
+        samples = get_samples(dataset.get_test(), self.cache)
+        for info, descriptors in samples:
             X = descriptors
             Y = self.classifier.predict(X)
             Y = [x[0] for x in self.multilabel.inverse_transform(Y)]
