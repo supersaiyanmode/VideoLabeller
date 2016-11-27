@@ -25,18 +25,20 @@ def generate_coord(shape):
         yield coord
 
 def get_samples(videos, cache):
+    count = 0
     for video in videos:
         descriptors = []
-        print "Training", video, "Shape:", video.shape()
+        print "Processing: ", video, "Shape:", video.shape()
 
         if str(video) in cache:
-            print "(Cached)"
+            print "  (Cached)"
             yield video.info, cache[str(video)]
             continue
 
+        count += 1
+
         for coord in generate_coord(video.shape()):
             coord = list(coord)
-            #coord[2] += video.start
             print "  Descriptor at:", coord,
             desc = get_descriptor(video, coord)
             if not desc:
@@ -50,6 +52,12 @@ def get_samples(videos, cache):
 
         cache[str(video)] = descriptors
         yield video.info, descriptors
+    
+        if count % 100 == 0:
+            print "***WRITING CACHE***"
+            cache.write()
+    print "***WRITING CACHE***"
+    cache.write()
 
 class VideoClassifier(object):
     def __init__(self, classifier):

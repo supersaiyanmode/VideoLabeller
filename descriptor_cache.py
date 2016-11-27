@@ -19,7 +19,6 @@ class Cache(object):
     
     def __setitem__(self, key, value):
         self.obj[key] = value
-        self.write()
 
     def write(self):
         with open(self.path, "w") as f:
