@@ -6,6 +6,7 @@ from sklearn import svm
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import confusion_matrix
+from sklearn.cluster import KMeans
 
 from descriptor import get_descriptor
 from data import DataSet
@@ -62,7 +63,7 @@ def get_samples(videos, cache):
 class VideoClassifier(object):
     def __init__(self, classifier):
         self.cache = Cache()
-        self.classifier = OneVsRestClassifier(classifier)
+        self.classifier = classifier
         self.multilabel = MultiLabelBinarizer()
 
     def train(self, dataset):
@@ -76,14 +77,19 @@ class VideoClassifier(object):
         
         X = features
         Y = self.multilabel.fit_transform([[x] for x in target])
-        self.classifier.fit(X, Y)
+        
+        self.kmeans = KMeans(n_clusters=8, verbose=True)
+        newX = self.kmeans.fit_transform(X)
+
+
+        self.classifier.fit(newX, Y)
 
     def test(self, dataset):
         actual, pred = [], []
 
         samples = get_samples(dataset.get_test(), self.cache)
         for info, descriptors in samples:
-            X = descriptors
+            X = self.kmeans.transform(descriptors)
             Y = self.classifier.predict(X)
             Y = [x[0] for x in self.multilabel.inverse_transform(Y)]
             c = Counter(Y)
@@ -92,8 +98,15 @@ class VideoClassifier(object):
         return actual, pred
 
 def main():
-    d = DataSet("dataset")
-    classifier = VideoClassifier(svm.SVC(verbose=True))
+    d = DataSet("dataset", train_file="train-small-4.txt",
+                test_file="test-small-4.txt")
+    #d = DataSet("dataset")
+    params = {
+        "decision_function_shape": "ovr",
+        "verbose": True,
+    }
+    c = OneVsRestClassifier(svm.SVC(**params))
+    classifier = VideoClassifier(c)
     classifier.train(d)
     actual, pred = classifier.test(d)
 
