@@ -1,6 +1,8 @@
 import random
 from collections import Counter
 from collections import defaultdict
+import os
+import pickle
 
 from sklearn import svm
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -12,6 +14,7 @@ from descriptor import get_descriptor
 from data import DataSet
 from descriptor_cache import Cache
 import config
+from utils import normalize
 
 
 def generate_coord(shape):
@@ -51,20 +54,43 @@ def get_samples(videos, cache):
             if len(descriptors) >= config.training_points:
                 break
 
+        print "Extracted", count, "descriptors"
+
         cache[str(video)] = descriptors
         yield video.info, descriptors
     
         if count % 100 == 0:
             print "***WRITING CACHE***"
             cache.write()
-    print "***WRITING CACHE***"
-    cache.write()
+    if count:
+        print "***WRITING CACHE***"
+        cache.write()
 
 class VideoClassifier(object):
-    def __init__(self, classifier):
+    def __init__(self, classifier, kmeans=None):
         self.cache = Cache()
         self.classifier = classifier
-        self.multilabel = MultiLabelBinarizer()
+        self.kmeans = kmeans or KMeans(n_clusters=8, verbose=True)
+
+    def save(self, path):
+        if not os.mkdir(path):
+            os.mkdir(path)
+
+        with open(path + "/classifier", "w") as f:
+            pickle.dump(self.classifier, f)
+        with open(path + "/kmeans", "w") as f:
+            pickle.dump(self.kmeans, f)
+
+    @staticmethod
+    def load(path):
+        with open(path + "/classifier") as f:
+            classifier = pickle.load(f)
+        with open(path + "/kmeans") as f:
+            kmeans = pickle.load(f)
+        return VideoClassifier(classifier, kmeans)
+
+    def post_process(self, vec):
+        return normalize(vec)
 
     def train(self, dataset):
         features, target = [], []
@@ -72,15 +98,13 @@ class VideoClassifier(object):
         samples = get_samples(dataset.get_training(), self.cache)
         for info, descriptors in samples:
             for desc in descriptors:
-                features.append(desc)
+                features.append(self.post_process(desc))
                 target.append(info.type)
         
         X = features
-        Y = self.multilabel.fit_transform([[x] for x in target])
+        Y = target
         
-        self.kmeans = KMeans(n_clusters=8, verbose=True)
         newX = self.kmeans.fit_transform(X)
-
 
         self.classifier.fit(newX, Y)
 
@@ -89,25 +113,34 @@ class VideoClassifier(object):
 
         samples = get_samples(dataset.get_test(), self.cache)
         for info, descriptors in samples:
-            X = self.kmeans.transform(descriptors)
+            X = self.kmeans.transform(map(self.post_process, descriptors))
             Y = self.classifier.predict(X)
-            Y = [x[0] for x in self.multilabel.inverse_transform(Y)]
             c = Counter(Y)
             actual.append(info.type)
             pred.append(c.most_common()[0][0])
+            print confusion_matrix(actual, pred)
         return actual, pred
 
 def main():
-    d = DataSet("dataset", train_file="train-small-4.txt",
-                test_file="test-small-4.txt")
-    #d = DataSet("dataset")
+    d = DataSet("dataset", train_file="train-small-2.txt",
+                test_file="test-small-2.txt")
+    d = DataSet("dataset")
     params = {
         "decision_function_shape": "ovr",
         "verbose": True,
     }
-    c = OneVsRestClassifier(svm.SVC(**params))
-    classifier = VideoClassifier(c)
-    classifier.train(d)
+
+    if config.save_model and os.path.exists(config.save_model):
+        classifier = VideoClassifier.load(config.save_model)
+        print "****LOAD MODEL****"
+    else:
+        c = OneVsRestClassifier(svm.SVC(**params))
+        classifier = VideoClassifier(c)
+        classifier.train(d)
+
+        print "***SAVE MODEL****"
+        classifier.save(config.save_model)
+
     actual, pred = classifier.test(d)
 
     print confusion_matrix(actual, pred)
