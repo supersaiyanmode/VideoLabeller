@@ -23,3 +23,4 @@ class Cache(object):
     def write(self):
         with open(self.path, "w") as f:
             json.dump(self.obj, f, indent=2)
+

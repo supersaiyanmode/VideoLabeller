@@ -9,11 +9,12 @@ class BaseConfig(object):
     index_size = 2
     index_sigma = 5.0
 
-    smooth_flag = False
+    smooth_flag = True
+    smooth_var = 20
 
     training_points = 50
 
-    save_model = "models/svm-normalized-full"
+    save_model = "models/Dec2-latest"
     
     def __init__(self):
         self.n_faces = 20 * (4 ** self.tessellation_levels)

@@ -1,5 +1,6 @@
 import math
 import collections
+import time
 
 import numpy as np
 
@@ -8,10 +9,8 @@ from buildHist import build_histogram, get_gradient
 from sphere_tri import sphere_tri
 from utils import dot, normalize
 
-sphere = sphere_tri(radius=config.tessellation_radius,
-                                    maxlevel=config.tessellation_levels)
-
-vertices, faces, centers = sphere
+sphere = None
+vertices, faces, centers = None, None, None
 
 def flatten(l):
     for el in l:
@@ -22,15 +21,34 @@ def flatten(l):
         else:
             yield el
 
+def init_sphere():
+    global sphere
+    global vertices, faces, centers
+
+    sphere = sphere_tri(radius=config.tessellation_radius,
+                                    maxlevel=config.tessellation_levels)
+    
+    vertices, faces, centers = sphere
+    
+
 def get_descriptor(video, coord, image_scale=1, time_scale=1):
+    global sphere
+    if sphere is None:
+        init_sphere()
+
+    _start = time.time()
+
     rad = image_scale * 3
     histogram = build_histogram(video, coord, rad, sphere)
+
+    _end = time.time()
+    print "(%f sec)"%(_end - _start),
 
     res = sorted([(x, i) for i, x in enumerate(histogram)], reverse=True)
 
     one_two = dot(centers[res[0][1]], centers[res[1][1]])
     one_three = dot(centers[res[0][1]], centers[res[2][1]])
-
+    
     if config.two_peak and one_two > 0.9 and one_three > 0.9:
         return None
 
@@ -112,7 +130,10 @@ def add_sample(index, video, coord, dist_sq, rct, ijs_i):
     if not config.smooth_flag:
         index[i][j][s][r[0][1]] += mag
     else:
-        raise Exception("Not implemented")
+        tmpsum = sum(x[0]**config.smooth_var for x in r[:3])
+        for idx in range(3):
+            val = r[idx][0] ** config.smooth_var
+            index[i][j][s][r[idx][1]] += mag * val / tmpsum
 
 if __name__ == '__main__':
     import data
