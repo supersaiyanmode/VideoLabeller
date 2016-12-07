@@ -1,4 +1,5 @@
 import random
+import os
 from collections import Counter
 from collections import defaultdict
 import pickle
@@ -124,7 +125,7 @@ class VideoClassifier(object):
             print confusion_matrix(actual, pred)
         return actual, pred
 
-def train_test(datset):
+def train_test(d):
     params = {
         "decision_function_shape": "ovr",
         "verbose": True,
@@ -143,5 +144,5 @@ def train_test(datset):
             classifier.save(config.save_model)
     
     actual, pred = classifier.test(d)
-    return actual, pred
+    return confusion_matrix(actual, pred)
 
