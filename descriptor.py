@@ -27,9 +27,9 @@ def init_sphere():
 
     sphere = sphere_tri(radius=config.tessellation_radius,
                                     maxlevel=config.tessellation_levels)
-    
+
     vertices, faces, centers = sphere
-    
+
 
 def get_descriptor(video, coord, image_scale=1, time_scale=1):
     global sphere
@@ -48,7 +48,7 @@ def get_descriptor(video, coord, image_scale=1, time_scale=1):
 
     one_two = dot(centers[res[0][1]], centers[res[1][1]])
     one_three = dot(centers[res[0][1]], centers[res[2][1]])
-    
+
     if config.two_peak and one_two > 0.9 and one_three > 0.9:
         return None
 
