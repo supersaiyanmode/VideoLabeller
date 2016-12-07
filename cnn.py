@@ -24,6 +24,7 @@ class VideoClassifier(object):
     def __init__(self, resize=(16,16,15)):
         self.resize = list(resize)
     
+
     def preprocess_video(self, frames):
         r = lambda x: cv2.resize(x, tuple(self.resize[:2]), 
                                 interpolation=cv2.INTER_AREA)
@@ -46,7 +47,7 @@ class VideoClassifier(object):
             nb_col=nb_conv[0],
             input_shape=tuple([1] + self.resize),
             activation='relu'))
-        model.add(MaxPooling3D(pool_size=(nb_pool[0], nb_pool[0], nb_pool[0])))
+        model.add(MaxPooling3D(pool_size=tuple([nb_pool[0]]*3)))
         model.add(Dropout(0.5))
         model.add(Flatten())
         model.add(Dense(128, init='normal', activation='relu'))
@@ -63,28 +64,21 @@ class VideoClassifier(object):
 
         for video in data.get_training():
             Y_tr.append(video.info.type)
-
             X_tr.append(self.preprocess_video(video))
+
 
         self.labels = sorted(set(Y_tr))
 
-        X_tr_array = np.array(X_tr)   # convert the frames read into array
-        label = np.array([self.labels.index(x) for x in Y_tr])
+        y_train = np.array([self.labels.index(x) for x in Y_tr])
+        X_train = np.array(X_tr)
 
-        num_samples = len(X_tr_array) 
-
-        train_data = [X_tr_array,label]
-
-        (X_train, y_train) = (train_data[0],train_data[1])
-        print('X_Train shape:', X_train.shape)
+        num_samples = len(X_tr) 
 
         train_set = np.zeros((num_samples, 1, self.resize[0],self.resize[1],self.resize[2]))
 
         for h in xrange(num_samples):
             train_set[h][0][:][:][:]=X_train[h,:,:,:]
           
-
-        print(train_set.shape, 'train samples')
 
         # CNN Training parameters
 
@@ -96,39 +90,49 @@ class VideoClassifier(object):
         Y_train = np_utils.to_categorical(y_train, nb_classes)
         train_set = train_set.astype('float32')
         train_set -= np.mean(train_set)
-        train_set /=np.max(train_set)
+        train_set /= np.max(train_set)
 
 
 
-        model = self.get_model()
-        # Split the data
-
-        #X_train_new, X_val_new, y_train_new,y_val_new =  train_test_split(train_set, Y_train, test_size=0.2, random_state=4)
-
-
-        # Train the model
-        #print X_train_new.shape, y_train_new.shape
-
-        hist = model.fit(train_set, Y_train, 
-                  batch_size=batch_size,nb_epoch = nb_epoch,show_accuracy=True,shuffle=True)
-
-        #hist = model.fit(X_train_new, y_train_new, validation_data=(X_val_new,y_val_new),
-        #          batch_size=batch_size,nb_epoch = nb_epoch,show_accuracy=True,shuffle=True)
+        self.model = self.get_model()
+        self.model.fit(train_set, Y_train, 
+                  batch_size=batch_size, nb_epoch=nb_epoch,
+                  show_accuracy=True,shuffle=True)
 
 
-        #hist = model.fit(train_set, Y_train, batch_size=batch_size,
-        #         nb_epoch=nb_epoch,validation_split=0.2, show_accuracy=True,
-        #           shuffle=True)
+    def test(self, data):
+        X_te = []
+        Y_te = []
+
+        for video in data.get_test():
+            Y_te.append(video.info.type)
+            X_te.append(self.preprocess_video(video))
 
 
-         # Evaluate the model
-        print X_val_new.shape, y_val_new.shape
-        #y_val_pred = model.predict(X_val_new, batch_size=batch_size, show_accuracy=True)
-        y_val_pred = model.predict(X_val_new, batch_size=batch_size)
-        pred = list(np.argmax(x) for x in y_val_pred)
-        act = list(np.argmax(x) for x in y_val_new)
+        y_test = np.array([self.labels.index(x) for x in Y_te])
+        X_test = np.array(X_te)
+
+        num_samples = len(X_te) 
+
+        test_set = np.zeros((num_samples, 1, self.resize[0],self.resize[1],self.resize[2]))
+
+        for h in xrange(num_samples):
+            test_set[h][0][:][:][:] = X_test[h,:,:,:]
+          
+
+        # convert class vectors to binary class matrices
+        test_set = test_set.astype('float32')
+        test_set -= np.mean(test_set)
+        test_set /= np.max(test_set)
+
+        pred = self.model.predict(test_set, batch_size=2)
+        pred = [np.argmax(x) for x in pred]
+        act = y_test
+
         print confusion_matrix(act, pred)
 
 data = DataSet("dataset")
-v = VideoClassifier()
+v = VideoClassifier(resize=(32,32,15))
 v.train(data)
+v.test(data)
+
