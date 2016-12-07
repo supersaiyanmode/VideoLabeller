@@ -58,20 +58,15 @@ class VideoClassifier(object):
 
 
     def train(self, data):
-        X_tr=[]           # variable to store entire dataset
+        X_tr = []
         Y_tr = []
-        labels = set()
 
         for video in data.get_training():
-            labels.add(video.info.type)
             Y_tr.append(video.info.type)
 
-            frames =[cv2.resize(x,(self.resize[0],self.resize[1]),interpolation=cv2.INTER_AREA) for x in video.frames[:15]]
-            inp = np.array(frames)
-            inp = np.rollaxis(np.rollaxis(inp, 2, 0), 2, 0)
-            X_tr.append(inp)
+            X_tr.append(self.preprocess_video(video))
 
-        self.labels = sorted(labels)
+        self.labels = sorted(set(Y_tr))
 
         X_tr_array = np.array(X_tr)   # convert the frames read into array
         label = np.array([self.labels.index(x) for x in Y_tr])
@@ -114,7 +109,6 @@ class VideoClassifier(object):
         # Train the model
         #print X_train_new.shape, y_train_new.shape
 
-        import pdb; pdb.set_trace()
         hist = model.fit(train_set, Y_train, 
                   batch_size=batch_size,nb_epoch = nb_epoch,show_accuracy=True,shuffle=True)
 
