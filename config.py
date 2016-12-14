@@ -14,7 +14,7 @@ class BaseConfig(object):
 
     training_points = 50
 
-    save_model = "models/vcnn"
+    save_model = "models/vcnn-74.39-10epochs-64filters-3pool-7conv-128-32"
     
     def __init__(self):
         self.n_faces = 20 * (4 ** self.tessellation_levels)
